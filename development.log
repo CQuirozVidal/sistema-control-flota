@@ -1,0 +1,88 @@
+[2026-04-03T18:14:05.488Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (391ms)
+[2026-04-03T18:14:05.741Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (252ms)
+[2026-04-03T18:14:05.786Z] API GET /supabase/rest/v1/vehicles?select=id&status=eq.active -> 200 (281ms)
+[2026-04-03T18:14:05.787Z] API GET /supabase/rest/v1/profiles?select=id&role=eq.conductor -> 200 (281ms)
+[2026-04-03T18:14:05.792Z] API GET /supabase/rest/v1/requests?select=id&status=eq.en_proceso -> 200 (284ms)
+[2026-04-03T18:14:05.795Z] API GET /supabase/rest/v1/vehicles?select=id -> 200 (291ms)
+[2026-04-03T18:14:05.798Z] API GET /supabase/rest/v1/requests?select=id&status=eq.pendiente -> 200 (291ms)
+[2026-04-03T18:14:05.993Z] API GET /supabase/rest/v1/documents?select=id&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03 -> 200 (251ms)
+[2026-04-03T18:14:06.047Z] API GET /supabase/rest/v1/documents?select=id -> 200 (259ms)
+[2026-04-03T18:14:06.049Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03&order=expiration_date.asc&limit=5 -> 200 (251ms)
+[2026-04-03T18:14:06.052Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (253ms)
+[2026-04-03T18:14:06.054Z] API GET /supabase/rest/v1/requests?select=*%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&status=in.%28pendiente%2Cen_proceso%29&order=created_at.desc&limit=6 -> 200 (260ms)
+[2026-04-03T18:14:06.063Z] API GET /supabase/rest/v1/messages?select=id&status=eq.pendiente -> 200 (274ms)
+[2026-04-03T18:14:25.124Z] UI navigation.menu.click {"from":"/admin","to":"/admin/search","role":"admin"}
+[2026-04-03T18:14:34.386Z] API GET /supabase/rest/v1/vehicles?select=*&license_plate=eq.TEST -> 406 (461ms)
+
+--- Restart 2026-04-03T18:16:53.360Z ---
+[2026-04-03T18:17:00.784Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (488ms)
+[2026-04-03T18:17:00.789Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (495ms)
+[2026-04-03T18:17:00.800Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (505ms)
+[2026-04-03T18:17:26.378Z] UI auth.login.submit {"email":"admin@flota.cl"}
+[2026-04-03T18:17:26.668Z] API POST /supabase/auth/v1/token?grant_type=password -> 400 (285ms)
+[2026-04-03T18:17:26.669Z] UI auth.login.failed {"email":"admin@flota.cl","message":"Invalid login credentials"}
+[2026-04-03T18:17:32.872Z] UI auth.login.submit {"email":"admin@flota.cl"}
+[2026-04-03T18:17:33.107Z] API POST /supabase/auth/v1/token?grant_type=password -> 400 (231ms)
+[2026-04-03T18:17:33.108Z] UI auth.login.failed {"email":"admin@flota.cl","message":"Invalid login credentials"}
+[2026-04-03T18:17:43.890Z] UI auth.login.submit {"email":"admin@flota.cl"}
+[2026-04-03T18:17:44.245Z] API POST /supabase/auth/v1/token?grant_type=password -> 400 (352ms)
+[2026-04-03T18:17:44.248Z] UI auth.login.failed {"email":"admin@flota.cl","message":"Invalid login credentials"}
+[2026-04-03T18:17:47.145Z] UI auth.login.submit {"email":"admin@flota.cl"}
+[2026-04-03T18:17:47.375Z] API POST /supabase/auth/v1/token?grant_type=password -> 400 (226ms)
+[2026-04-03T18:17:47.378Z] UI auth.login.failed {"email":"admin@flota.cl","message":"Invalid login credentials"}
+
+--- Restart 2026-04-03T18:18:44.416Z ---
+
+--- Restart 2026-04-03T18:18:44.421Z ---
+[2026-04-03T18:19:01.405Z] UI auth.login.submit {"email":"admin@flota.cl"}
+[2026-04-03T18:19:01.409Z] UI auth.login.failed {"email":"admin@flota.cl","message":"Credenciales inválidas"}
+
+--- Restart 2026-04-03T18:20:21.106Z ---
+[2026-04-03T18:20:54.721Z] UI auth.login.submit {"email":"admin@flota.cl"}
+[2026-04-03T18:20:54.726Z] UI auth.login.failed {"email":"admin@flota.cl","message":"Usuario no encontrado: [object Object]"}
+[2026-04-03T18:20:59.700Z] UI auth.login.submit {"email":"admin@flota.cl"}
+[2026-04-03T18:20:59.703Z] UI auth.login.failed {"email":"admin@flota.cl","message":"Usuario no encontrado: [object Object]"}
+[2026-04-03T18:21:05.637Z] UI auth.login.submit {"email":"admin@flota.cl"}
+[2026-04-03T18:21:05.639Z] UI auth.login.failed {"email":"admin@flota.cl","message":"Usuario no encontrado: [object Object]"}
+
+--- Restart 2026-04-03T18:22:08.789Z ---
+[2026-04-03T18:22:29.606Z] UI auth.login.submit {"email":"admin@flota.cl"}
+[2026-04-03T18:22:29.611Z] UI auth.login.failed {"email":"admin@flota.cl","message":"Usuario no encontrado: [object object]"}
+
+--- Restart 2026-04-03T18:23:32.112Z ---
+
+--- Restart 2026-04-03T18:23:38.428Z ---
+[2026-04-03T18:24:05.132Z] API GET /supabase/auth/v1/health -> 200 (273ms)
+[2026-04-03T18:24:05.316Z] API POST /supabase/auth/v1/token?grant_type=password -> 200 (449ms)
+[2026-04-03T18:24:05.316Z] API POST /supabase/auth/v1/token?grant_type=password -> 200 (450ms)
+[2026-04-03T18:24:20.816Z] API POST /supabase/auth/v1/token?grant_type=password -> 200 (305ms)
+[2026-04-03T18:26:11.797Z] UI auth.login.submit {"email":"admincorto@santaaurora.cl"}
+[2026-04-03T18:26:11.800Z] UI auth.login.failed {"email":"admincorto@santaaurora.cl","message":"Usuario no encontrado: [object object]"}
+[2026-04-03T18:26:14.231Z] UI auth.login.submit {"email":"admincorto@santaaurora.cl"}
+[2026-04-03T18:26:14.234Z] UI auth.login.failed {"email":"admincorto@santaaurora.cl","message":"Usuario no encontrado: [object object]"}
+[2026-04-03T18:26:14.398Z] UI auth.login.submit {"email":"admincorto@santaaurora.cl"}
+[2026-04-03T18:26:14.400Z] UI auth.login.failed {"email":"admincorto@santaaurora.cl","message":"Usuario no encontrado: [object object]"}
+[2026-04-03T18:27:47.448Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (560ms)
+[2026-04-03T18:27:47.448Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (558ms)
+[2026-04-03T18:27:50.837Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (296ms)
+[2026-04-03T18:27:52.466Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (269ms)
+[2026-04-03T18:27:52.519Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (306ms)
+[2026-04-03T18:27:52.527Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (316ms)
+
+--- Restart 2026-04-03T18:27:58.548Z ---
+[2026-04-03T18:28:00.196Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (230ms)
+[2026-04-03T18:28:00.201Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (235ms)
+[2026-04-03T18:28:00.683Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (718ms)
+
+--- Restart 2026-04-03T18:28:03.618Z ---
+[2026-04-03T18:28:05.234Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (228ms)
+[2026-04-03T18:28:05.236Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (246ms)
+[2026-04-03T18:28:05.242Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (237ms)
+[2026-04-03T18:28:26.222Z] API GET /supabase/auth/v1/health -> 200 (238ms)
+[2026-04-03T18:28:26.327Z] API POST /supabase/auth/v1/token?grant_type=password -> 200 (329ms)
+[2026-04-03T18:28:26.329Z] API POST /supabase/auth/v1/token?grant_type=password -> 200 (330ms)
+
+--- Restart 2026-04-03T18:28:49.224Z ---
+[2026-04-03T18:40:00.018Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (265ms)
+[2026-04-03T18:40:00.268Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (248ms)
+[2026-04-03T18:40:00.502Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (234ms)

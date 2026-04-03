@@ -1,88 +1,80 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import StatusBadge, { REQUEST_STATUSES } from "@/components/StatusBadge";
-import PageHeader from "@/components/PageHeader";
-import { ClipboardList } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-/**
- * AdminRequests — Vista de solicitudes con filtro por estado y cambio de estado inline.
- * Soporta 5 estados: pendiente, en_proceso, aprobado, rechazado, completado.
- */
 export default function AdminRequests() {
-  const { toast } = useToast();
-  const [requests, setRequests] = useState<any[]>([]);
-  const [filter, setFilter] = useState("pendiente");
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const load = async () => {
-    let q = supabase.from("requests")
-      .select("*, request_types(name), profiles(full_name), vehicles(license_plate)")
-      .order("created_at", { ascending: false })
-      .limit(100);
-    if (filter !== "all") q = q.eq("status", filter);
-    const { data } = await q;
-    setRequests(data || []);
-  };
+  useEffect(() => {
+    fetchRequests();
+  }, []);
 
-  useEffect(() => { load(); }, [filter]);
-
-  const updateStatus = async (id: string, status: string) => {
-    const { error } = await supabase.from("requests").update({ status }).eq("id", id);
-    if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-    else { toast({ title: `Estado actualizado a: ${status.replace("_", " ")}` }); load(); }
+  const fetchRequests = async () => {
+    try {
+      const { data } = await supabase
+        .from("requests")
+        .select("id, status, created_at")
+        .order("created_at", { ascending: false });
+      setRequests(data || []);
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div>
-      <PageHeader title="Gestión de Solicitudes" description={`${requests.length} resultado(s)`}>
-        <Select value={filter} onValueChange={setFilter}>
-          <SelectTrigger className="w-[160px] h-8 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas</SelectItem>
-            {REQUEST_STATUSES.map((s) => (
-              <SelectItem key={s} value={s} className="capitalize">{s.replace("_", " ")}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </PageHeader>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Solicitudes</h1>
+        <p className="text-muted-foreground">Gestiona todas las solicitudes de los conductores</p>
+      </div>
 
-      {requests.length === 0 ? (
-        <Card><CardContent className="empty-state"><ClipboardList /><p>No hay solicitudes con este filtro.</p></CardContent></Card>
-      ) : (
-        <div className="grid gap-3">
-          {requests.map((req: any) => (
-            <Card key={req.id} className="stat-card">
-              <CardContent className="flex items-center gap-4 p-4 flex-wrap">
-                <div className="flex-1 min-w-[200px]">
-                  <p className="font-medium text-sm">{req.request_types?.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {req.profiles?.full_name}
-                    {req.vehicles?.license_plate ? ` • ${req.vehicles.license_plate}` : ""}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate mt-0.5">{req.details || "Sin detalles"}</p>
-                  <div className="flex gap-3 text-xs text-muted-foreground mt-1">
-                    {req.amount && <span>💰 ${Number(req.amount).toLocaleString("es-CL")}</span>}
-                    <span>{new Date(req.created_at).toLocaleDateString("es-CL")}</span>
-                  </div>
-                </div>
-                <StatusBadge status={req.status} />
-                {/* Selector rápido de estado */}
-                <Select value={req.status} onValueChange={(v) => updateStatus(req.id, v)}>
-                  <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {REQUEST_STATUSES.map((s) => (
-                      <SelectItem key={s} value={s} className="capitalize">{s.replace("_", " ")}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      <Card>
+        <CardHeader>
+          <CardTitle>Solicitudes Registradas</CardTitle>
+          <CardDescription>Lista completa de solicitudes</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : requests.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Fecha</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {requests.map((r: any) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="font-mono text-sm">{r.id.substring(0, 8)}</TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        r.status === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
+                        r.status === 'en_proceso' ? 'bg-blue-100 text-blue-800' :
+                        'bg-green-100 text-green-800'
+                      }`}>
+                        {r.status}
+                      </span>
+                    </TableCell>
+                    <TableCell>{new Date(r.created_at).toLocaleDateString()}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <p className="text-center text-muted-foreground py-8">No hay solicitudes</p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

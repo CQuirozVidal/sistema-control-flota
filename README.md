@@ -47,21 +47,24 @@ Este proyecto implementa una interfaz para controlar procesos clave de una flota
 drivebuddy-hq/
 |-- public/                      # Archivos estaticos
 |-- src/
-|   |-- components/              # Componentes de layout y UI
+|   |-- components/              # Componentes UI compartidos
 |   |   |-- ui/                  # Libreria de componentes base (shadcn/ui)
-|   |-- contexts/                # Contextos globales (ej: autenticacion)
-|   |-- hooks/                   # Custom hooks reutilizables
+|   |-- features/                # Modulos por dominio (Clean Architecture)
+|   |   |-- auth/                # Autenticacion, contexto y rutas protegidas
+|   |   |-- admin/               # Paginas y logica del rol admin
+|   |   |-- conductor/           # Paginas y logica del rol conductor
+|   |-- shared/                  # Layouts y utilidades transversales
 |   |-- integrations/
 |   |   |-- supabase/            # Cliente y tipos de Supabase
-|   |-- lib/                     # Utilidades compartidas
+|   |-- lib/                     # Utilidades base
 |   |-- pages/
-|   |   |-- admin/               # Vistas del rol administrador
-|   |   |-- conductor/           # Vistas del rol conductor
+|   |   |-- NotFound.tsx         # Pagina fallback
 |   |-- test/                    # Config y tests unitarios
 |   |-- App.tsx                  # Definicion principal de rutas
 |   |-- main.tsx                 # Punto de entrada
 |-- supabase/
 |   |-- migrations/              # Migraciones SQL
+|-- development.log              # Bitacora de interacciones en desarrollo
 |-- vite.config.ts               # Configuracion de Vite (puerto 8080)
 |-- tailwind.config.ts           # Configuracion de Tailwind
 |-- package.json                 # Scripts y dependencias
@@ -137,6 +140,13 @@ npm run test
 | Lint | `npm run lint` | Analisis estatico de codigo |
 | Test | `npm run test` | Ejecuta pruebas unitarias |
 | Test watch | `npm run test:watch` | Modo observador de pruebas |
+
+## Bitacora de desarrollo
+
+- Archivo: `development.log` en la raiz.
+- Se llena automaticamente en `npm run dev` con:
+  - eventos UI (login, registro, navegacion, errores runtime),
+  - llamadas API hacia `/supabase/*` (metodo, endpoint, estado y duracion).
 
 ## Rutas principales
 

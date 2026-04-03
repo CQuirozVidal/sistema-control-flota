@@ -1,12 +1,13 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   Truck, LayoutDashboard, FileText, ClipboardList, Gauge, MessageSquare,
   Search, LogOut, Menu, X, ChevronRight, User, Users
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { logDevInteraction } from "@/shared/monitoring/devLogger";
 
 const baseAdminLinks = [
   { to: "/admin", icon: LayoutDashboard, label: "Dashboard" },
@@ -70,7 +71,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <Link
                 key={to}
                 to={to}
-                onClick={() => setSidebarOpen(false)}
+                onClick={() => {
+                  logDevInteraction("navigation.menu.click", {
+                    from: location.pathname,
+                    to,
+                    role: profile?.role ?? "unknown",
+                  });
+                  setSidebarOpen(false);
+                }}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150",
                   active
@@ -106,7 +114,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             variant="ghost"
             size="sm"
             className="w-full justify-start text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-            onClick={signOut}
+            onClick={async () => {
+              logDevInteraction("auth.logout.click", { role: profile?.role ?? "unknown" });
+              await signOut();
+            }}
           >
             <LogOut className="mr-2 h-4 w-4" />
             Cerrar sesión

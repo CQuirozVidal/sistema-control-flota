@@ -12,9 +12,14 @@ interface MockSession {
   access_token: string;
 }
 
+interface SignInCredentials {
+  email: string;
+  password: string;
+}
+
 type AuthCallback = (event: string, session: MockSession | null) => void;
 
-const MOCK_USERS = {
+const MOCK_USERS: Record<string, any> = {
   "admin@flota.cl": {
     id: "admin-123",
     password: "Admin123!",
@@ -29,7 +34,7 @@ const MOCK_USERS = {
   },
 };
 
-const MOCK_PROFILES = {
+const MOCK_PROFILES: Record<string, any> = {
   "admin-123": {
     id: "admin-123",
     user_id: "admin-123",
@@ -52,6 +57,7 @@ export class MockSupabaseAuth {
 
   constructor() {
     this.loadSessionFromStorage();
+    console.log("🔐 MockSupabaseAuth inicializado");
   }
 
   private loadSessionFromStorage() {
@@ -59,7 +65,9 @@ export class MockSupabaseAuth {
     if (stored) {
       try {
         this.currentSession = JSON.parse(stored);
-      } catch {
+        console.log("✅ Sesión restaurada desde localStorage");
+      } catch (e) {
+        console.log("❌ No se pudo restaurar sesión");
         this.currentSession = null;
       }
     }
@@ -79,13 +87,32 @@ export class MockSupabaseAuth {
     });
   }
 
-  async signInWithPassword(email: string, password: string) {
-    const user = MOCK_USERS[email as keyof typeof MOCK_USERS];
+  async signInWithPassword(credentials: SignInCredentials) {
+    const { email, password } = credentials || { email: "", password: "" };
+    // Asegurar que email es un string limpio
+    const cleanEmail = String(email || "").trim().toLowerCase();
+    const cleanPassword = String(password || "").trim();
+    
+    console.log(`🔑 Intentando login con: "${cleanEmail}"`);
+    console.log(`   Usuarios disponibles: ${Object.keys(MOCK_USERS).join(", ")}`);
+    
+    const user = MOCK_USERS[cleanEmail];
 
-    if (!user || user.password !== password) {
+    if (!user) {
+      console.log(`❌ Usuario no encontrado: "${cleanEmail}"`);
       return {
         data: null,
-        error: { message: "Credenciales inválidas" },
+        error: { message: `Usuario no encontrado: ${cleanEmail}` },
+      };
+    }
+
+    if (user.password !== cleanPassword) {
+      console.log(`❌ Contraseña incorrecta para ${cleanEmail}`);
+      console.log(`   Esperada: "${user.password}"`);
+      console.log(`   Recibida: "${cleanPassword}"`);
+      return {
+        data: null,
+        error: { message: "Contraseña incorrecta" },
       };
     }
 
@@ -101,13 +128,15 @@ export class MockSupabaseAuth {
     this.saveSessionToStorage(session);
     this.notifyListeners();
 
-    return { data: { session }, error: null };
+    console.log(`✅ Login exitoso para ${cleanEmail}`);
+    return { data: { user: session.user, session }, error: null };
   }
 
   async signOut() {
     this.currentSession = null;
     this.saveSessionToStorage(null);
     this.notifyListeners();
+    console.log("📤 Sesión cerrada");
     return { error: null };
   }
 
@@ -147,8 +176,8 @@ export class MockSupabaseDatabase {
             if (table === "profiles") {
               const profile = MOCK_PROFILES[value as keyof typeof MOCK_PROFILES];
               return {
-                data: profile,
-                error: null,
+                data: profile || null,
+                error: profile ? null : { message: "Perfil no encontrado" },
               };
             }
             return { data: null, error: null };

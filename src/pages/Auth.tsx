@@ -7,64 +7,74 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Truck, Shield } from "lucide-react";
+import { Truck } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Auth() {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError("");
     setLoading(true);
-    const form = new FormData(e.currentTarget);
-    const email = (form.get("email") as string).trim();
-    const password = form.get("password") as string;
+
+    const formData = new FormData(e.currentTarget);
+    const email = String(formData.get("email") || "").trim().toLowerCase();
+    const password = String(formData.get("password") || "").trim();
+
+    console.log("🔑 Intentando login con email:", email);
+    console.log("   Contraseña recibida (len):", password.length);
 
     if (!email || !password) {
-      toast({ title: "Campos requeridos", description: "Ingresa correo y contraseña.", variant: "destructive" });
+      setError("Por favor completa todos los campos");
+      toast({
+        title: "Campos requeridos",
+        description: "Ingresa correo y contraseña.",
+        variant: "destructive",
+      });
       setLoading(false);
       return;
     }
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      toast({ title: "Error al iniciar sesión", description: error.message, variant: "destructive" });
-    } else {
-      navigate("/");
-    }
-    setLoading(false);
-  };
+    try {
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
-    const form = new FormData(e.currentTarget);
-    const name = (form.get("name") as string).trim();
-    const email = (form.get("email") as string).trim();
-    const password = form.get("password") as string;
+      console.log("Login result:", { data, error: authError });
 
-    if (!name || !email || password.length < 6) {
-      toast({ title: "Datos inválidos", description: "Completa todos los campos. Contraseña mínimo 6 caracteres.", variant: "destructive" });
+      if (authError) {
+        console.error("❌ Error de autenticación:", authError);
+        setError(authError.message || "Error al iniciar sesión");
+        toast({
+          title: "Error al iniciar sesión",
+          description: authError.message || "Credenciales inválidas",
+          variant: "destructive",
+        });
+      } else {
+        console.log("✅ Login exitoso!");
+        toast({
+          title: "¡Bienvenido!",
+          description: "Iniciando sesión...",
+        });
+        navigate("/");
+      }
+    } catch (err) {
+      console.error("❌ Error en login:", err);
+      const errorMessage = err instanceof Error ? err.message : "Error desconocido";
+      setError(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: name },
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    if (error) {
-      toast({ title: "Error al registrarse", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "¡Cuenta creada!", description: "Ya puedes iniciar sesión." });
-      navigate("/");
-    }
-    setLoading(false);
   };
 
   return (
@@ -80,56 +90,67 @@ export default function Auth() {
         </div>
 
         <Card className="shadow-lg">
-          <CardContent className="pt-6">
-            <Tabs defaultValue="login">
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
-                <TabsTrigger value="register">Registrarse</TabsTrigger>
-              </TabsList>
+          <CardHeader className="text-center pb-4">
+            <CardTitle>Acceso a la Plataforma</CardTitle>
+            <CardDescription>
+              Ingresa con tus credenciales para continuar
+            </CardDescription>
+          </CardHeader>
 
-              <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email">Correo electrónico</Label>
-                    <Input id="login-email" name="email" type="email" required placeholder="correo@santaaurora.cl" autoComplete="email" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="login-password">Contraseña</Label>
-                    <Input id="login-password" name="password" type="password" required minLength={6} autoComplete="current-password" />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Ingresando..." : "Ingresar"}
-                  </Button>
-                </form>
-              </TabsContent>
+          <CardContent>
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-              <TabsContent value="register">
-                <form onSubmit={handleRegister} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="reg-name">Nombre completo</Label>
-                    <Input id="reg-name" name="name" required placeholder="Carlos Muñoz Rojas" maxLength={100} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="reg-email">Correo electrónico</Label>
-                    <Input id="reg-email" name="email" type="email" required placeholder="correo@santaaurora.cl" autoComplete="email" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="reg-password">Contraseña (mín. 6 caracteres)</Label>
-                    <Input id="reg-password" name="password" type="password" required minLength={6} autoComplete="new-password" />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Creando cuenta..." : "Crear Cuenta"}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Correo electrónico</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="admin@flota.cl"
+                  autoComplete="email"
+                  disabled={loading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Contraseña</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  minLength={6}
+                  placeholder="Admin123!"
+                  autoComplete="current-password"
+                  disabled={loading}
+                />
+              </div>
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Ingresando..." : "Ingresar"}
+              </Button>
+            </form>
+
+            {/* Credenciales de demo */}
+            <div className="mt-6 pt-6 border-t space-y-2 text-sm">
+              <p className="font-medium text-muted-foreground">Credenciales de prueba:</p>
+              <div className="bg-slate-50 p-3 rounded space-y-1 text-xs font-mono">
+                <p><span className="text-gray-500">Admin:</span> admin@flota.cl / Admin123!</p>
+                <p><span className="text-gray-500">Conductor:</span> conductor@flota.cl / Conductor123!</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        <div className="flex items-center justify-center gap-1.5 mt-4 text-xs text-muted-foreground">
-          <Shield className="h-3 w-3" />
-          Acceso seguro con cifrado de extremo a extremo
-        </div>
+        <p className="text-center text-xs text-muted-foreground mt-4">
+          🔒 Acceso seguro con cifrado de extremo a extremo
+        </p>
       </div>
     </div>
   );
