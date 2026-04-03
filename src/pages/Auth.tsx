@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Truck } from "lucide-react";
+import { Truck, Shield } from "lucide-react";
 
 export default function Auth() {
   const [loading, setLoading] = useState(false);
@@ -18,12 +18,18 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true);
     const form = new FormData(e.currentTarget);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: form.get("email") as string,
-      password: form.get("password") as string,
-    });
+    const email = (form.get("email") as string).trim();
+    const password = form.get("password") as string;
+
+    if (!email || !password) {
+      toast({ title: "Campos requeridos", description: "Ingresa correo y contraseña.", variant: "destructive" });
+      setLoading(false);
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Error al iniciar sesión", description: error.message, variant: "destructive" });
     } else {
       navigate("/");
     }
@@ -34,75 +40,97 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true);
     const form = new FormData(e.currentTarget);
+    const name = (form.get("name") as string).trim();
+    const email = (form.get("email") as string).trim();
+    const password = form.get("password") as string;
+
+    if (!name || !email || password.length < 6) {
+      toast({ title: "Datos inválidos", description: "Completa todos los campos. Contraseña mínimo 6 caracteres.", variant: "destructive" });
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase.auth.signUp({
-      email: form.get("email") as string,
-      password: form.get("password") as string,
+      email,
+      password,
       options: {
-        data: { full_name: form.get("name") as string },
+        data: { full_name: name },
         emailRedirectTo: window.location.origin,
       },
     });
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Error al registrarse", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Registro exitoso", description: "Revisa tu correo para confirmar tu cuenta." });
+      toast({ title: "¡Cuenta creada!", description: "Ya puedes iniciar sesión." });
+      navigate("/");
     }
     setLoading(false);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md animate-fade-in">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-            <Truck className="h-6 w-6 text-primary-foreground" />
+      <div className="w-full max-w-md animate-fade-in">
+        {/* Branding */}
+        <div className="text-center mb-6">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/20">
+            <Truck className="h-7 w-7 text-primary-foreground" />
           </div>
-          <CardTitle className="font-heading text-2xl">FlotaControl</CardTitle>
-          <CardDescription>Gestión integral de flotas y conductores</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="login">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
-              <TabsTrigger value="register">Registrarse</TabsTrigger>
-            </TabsList>
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email">Correo electrónico</Label>
-                  <Input id="login-email" name="email" type="email" required placeholder="correo@ejemplo.com" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Contraseña</Label>
-                  <Input id="login-password" name="password" type="password" required minLength={6} />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Ingresando..." : "Ingresar"}
-                </Button>
-              </form>
-            </TabsContent>
-            <TabsContent value="register">
-              <form onSubmit={handleRegister} className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="reg-name">Nombre completo</Label>
-                  <Input id="reg-name" name="name" required placeholder="Juan Pérez" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="reg-email">Correo electrónico</Label>
-                  <Input id="reg-email" name="email" type="email" required placeholder="correo@ejemplo.com" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="reg-password">Contraseña</Label>
-                  <Input id="reg-password" name="password" type="password" required minLength={6} />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Registrando..." : "Crear cuenta"}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+          <h1 className="font-heading text-2xl font-bold">FlotaControl</h1>
+          <p className="text-sm text-muted-foreground mt-1">Transportes Santa Aurora SpA</p>
+        </div>
+
+        <Card className="shadow-lg">
+          <CardContent className="pt-6">
+            <Tabs defaultValue="login">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
+                <TabsTrigger value="register">Registrarse</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="login">
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="login-email">Correo electrónico</Label>
+                    <Input id="login-email" name="email" type="email" required placeholder="correo@santaaurora.cl" autoComplete="email" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="login-password">Contraseña</Label>
+                    <Input id="login-password" name="password" type="password" required minLength={6} autoComplete="current-password" />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Ingresando..." : "Ingresar"}
+                  </Button>
+                </form>
+              </TabsContent>
+
+              <TabsContent value="register">
+                <form onSubmit={handleRegister} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="reg-name">Nombre completo</Label>
+                    <Input id="reg-name" name="name" required placeholder="Carlos Muñoz Rojas" maxLength={100} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="reg-email">Correo electrónico</Label>
+                    <Input id="reg-email" name="email" type="email" required placeholder="correo@santaaurora.cl" autoComplete="email" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="reg-password">Contraseña (mín. 6 caracteres)</Label>
+                    <Input id="reg-password" name="password" type="password" required minLength={6} autoComplete="new-password" />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Creando cuenta..." : "Crear Cuenta"}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+
+        <div className="flex items-center justify-center gap-1.5 mt-4 text-xs text-muted-foreground">
+          <Shield className="h-3 w-3" />
+          Acceso seguro con cifrado de extremo a extremo
+        </div>
+      </div>
     </div>
   );
 }
