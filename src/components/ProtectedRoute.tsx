@@ -1,13 +1,15 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { getDeniedMessage, getHomeRouteForRole, type AppRole } from "@/lib/authz";
 
 interface Props {
   children: React.ReactNode;
-  requiredRole?: "admin" | "conductor";
+  requiredRole?: AppRole;
 }
 
 export default function ProtectedRoute({ children, requiredRole }: Props) {
   const { user, profile, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -24,7 +26,18 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
     </div>
   );
   if (requiredRole && profile.role !== requiredRole) {
-    return <Navigate to={profile.role === "admin" ? "/admin" : "/conductor"} replace />;
+    return (
+      <Navigate
+        to={getHomeRouteForRole(profile.role)}
+        replace
+        state={{
+          denied: {
+            attemptedPath: location.pathname,
+            message: getDeniedMessage(requiredRole, profile.role),
+          },
+        }}
+      />
+    );
   }
 
   return <>{children}</>;

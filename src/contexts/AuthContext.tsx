@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import { type AppRole } from "@/lib/authz";
 
 type Profile = Tables<"profiles">;
 
@@ -10,6 +11,7 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
+  role: AppRole | null;
   isAdmin: boolean;
   isConductor: boolean;
   signOut: () => Promise<void>;
@@ -24,13 +26,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
+  const fetchProfile = async (userId: string, attempt = 0): Promise<Profile | null> => {
+    const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("user_id", userId)
       .single();
-    setProfile(data);
+
+    if (error && attempt < 3) {
+      await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+      return fetchProfile(userId, attempt + 1);
+    }
+
+    setProfile(data ?? null);
+    return data ?? null;
   };
 
   useEffect(() => {
@@ -75,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         profile,
         loading,
+        role: profile?.role ?? null,
         isAdmin: profile?.role === "admin",
         isConductor: profile?.role === "conductor",
         signOut,
