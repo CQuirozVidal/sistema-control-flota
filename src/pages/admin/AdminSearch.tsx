@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import RequestPriorityBadge from "@/components/RequestPriorityBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import StatusBadge from "@/components/StatusBadge";
 import PageHeader from "@/components/PageHeader";
 import { Search, Truck, User, FileText, ClipboardList, Gauge, StickyNote, Plus, AlertCircle, Download } from "lucide-react";
+import { sortRequestsByPriority } from "@/lib/requestPriority";
 
 /**
  * AdminSearch — Buscador consolidado por patente.
@@ -30,6 +32,15 @@ export default function AdminSearch() {
   const [newNote, setNewNote] = useState("");
   const [searching, setSearching] = useState(false);
   const [found, setFound] = useState(false);
+  const sortedRequests = useMemo(
+    () =>
+      sortRequestsByPriority(
+        requests,
+        (request) => request.request_types?.name,
+        (request) => request.created_at,
+      ),
+    [requests],
+  );
 
   const handleSearch = async () => {
     const cleaned = plate.trim().toUpperCase();
@@ -226,11 +237,14 @@ export default function AdminSearch() {
 
           {/* TAB: Solicitudes */}
           <TabsContent value="requests" className="mt-4 space-y-2">
-            {requests.length === 0 ? <p className="text-sm text-muted-foreground py-6 text-center">Sin solicitudes asociadas.</p> : requests.map((req: any) => (
+            {sortedRequests.length === 0 ? <p className="text-sm text-muted-foreground py-6 text-center">Sin solicitudes asociadas.</p> : sortedRequests.map((req: any) => (
               <Card key={req.id} className="stat-card">
                 <CardContent className="flex items-center gap-4 p-4">
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm">{req.request_types?.name}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium text-sm">{req.request_types?.name}</p>
+                      <RequestPriorityBadge requestTypeName={req.request_types?.name} />
+                    </div>
                     <p className="text-xs text-muted-foreground">{req.profiles?.full_name} • {req.details || ""}</p>
                     <div className="flex gap-3 text-xs text-muted-foreground mt-0.5">
                       {req.amount && <span>💰 ${Number(req.amount).toLocaleString("es-CL")}</span>}
@@ -299,3 +313,5 @@ export default function AdminSearch() {
     </div>
   );
 }
+
+
