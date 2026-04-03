@@ -27,33 +27,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("profiles")
         .select("*")
         .eq("user_id", userId)
         .single();
-      
-      if (error) {
-        console.warn("Error fetching profile:", error);
-        // En mock, crear perfil por defecto
-        if (user?.email === "admin@flota.cl") {
-          setProfile({
-            user_id: userId,
-            role: "admin",
-            full_name: "Administrador",
-          } as any);
-        } else if (user?.email === "conductor@flota.cl") {
-          setProfile({
-            user_id: userId,
-            role: "conductor",
-            full_name: "Conductor",
-          } as any);
-        }
-      } else {
-        setProfile(data);
-      }
+      setProfile(data);
     } catch (error) {
-      console.error("Error en fetchProfile:", error);
+      console.error("Error fetching profile:", error);
     }
   };
 
@@ -63,11 +44,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (_event, session) => {
-          console.log("Auth state changed:", _event, session?.user?.email);
           setSession(session);
           setUser(session?.user ?? null);
           if (session?.user) {
-            timeoutId = setTimeout(() => fetchProfile(session.user.id), 100);
+            timeoutId = setTimeout(() => fetchProfile(session.user.id), 0);
           } else {
             setProfile(null);
           }
@@ -75,21 +55,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       );
 
-      supabase.auth.getSession()
-        .then(({ data: { session } }: any) => {
-          console.log("Current session:", session?.user?.email);
-          setSession(session);
-          setUser(session?.user ?? null);
-          if (session?.user) {
-            fetchProfile(session.user.id);
-          } else {
-            setLoading(false);
-          }
-        })
-        .catch((error) => {
-          console.error("Error getting session:", error);
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          fetchProfile(session.user.id);
+        } else {
           setLoading(false);
-        });
+        }
+      }).catch((error) => {
+        console.error("Error getting session:", error);
+        setLoading(false);
+      });
 
       return () => {
         if (timeoutId) clearTimeout(timeoutId);

@@ -1,51 +1,59 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import AdminLayout from "@/components/layouts/AdminLayout";
-import ConductorLayout from "@/components/layouts/ConductorLayout";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { getHomeRouteForRole } from "@/lib/authz";
-import Auth from "@/pages/Auth";
+import { AuthProvider, useAuth } from "@/features/auth/context/AuthContext";
+import ProtectedRoute from "@/features/auth/components/ProtectedRoute";
+import AppLayout from "@/shared/layouts/AppLayout";
+import Auth from "@/features/auth/pages/AuthPage";
+import ConductorDashboard from "@/features/conductor/pages/ConductorDashboard";
+import ConductorVehicles from "@/features/conductor/pages/ConductorVehicles";
+import ConductorDocuments from "@/features/conductor/pages/ConductorDocuments";
+import ConductorRequests from "@/features/conductor/pages/ConductorRequests";
+import ConductorMileage from "@/features/conductor/pages/ConductorMileage";
+import ConductorMessages from "@/features/conductor/pages/ConductorMessages";
+import AdminDashboard from "@/features/admin/pages/AdminDashboard";
+import AdminSearch from "@/features/admin/pages/AdminSearch";
+import AdminVehicles from "@/features/admin/pages/AdminVehicles";
+import AdminRequests from "@/features/admin/pages/AdminRequests";
+import AdminMessages from "@/features/admin/pages/AdminMessages";
+import AdminUsers from "@/features/admin/pages/AdminUsers";
 import NotFound from "@/pages/NotFound";
-import AdminDashboard from "@/pages/admin/AdminDashboard";
-import AdminMessages from "@/pages/admin/AdminMessages";
-import AdminRequests from "@/pages/admin/AdminRequests";
-import AdminSearch from "@/pages/admin/AdminSearch";
-import AdminVehicles from "@/pages/admin/AdminVehicles";
-import ConductorDashboard from "@/pages/conductor/ConductorDashboard";
-import ConductorDocuments from "@/pages/conductor/ConductorDocuments";
-import ConductorMessages from "@/pages/conductor/ConductorMessages";
-import ConductorMileage from "@/pages/conductor/ConductorMileage";
-import ConductorRequests from "@/pages/conductor/ConductorRequests";
-import ConductorVehicles from "@/pages/conductor/ConductorVehicles";
 
 const queryClient = new QueryClient();
 
+/** Redirige al dashboard según el rol del usuario autenticado */
 function RootRedirect() {
   const { user, profile, loading } = useAuth();
-
+  
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
+          <p className="text-gray-600 font-medium">Cargando aplicación...</p>
+        </div>
       </div>
     );
   }
 
-  if (!user) return <Navigate to="/auth" replace />;
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
 
   if (!profile) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
+          <p className="text-gray-600 font-medium">Preparando perfil...</p>
+        </div>
       </div>
     );
   }
 
-  return <Navigate to={getHomeRouteForRole(profile.role)} replace />;
+  return <Navigate to={profile.role === "conductor" ? "/conductor" : "/admin"} replace />;
 }
 
 const App = () => (
@@ -59,117 +67,21 @@ const App = () => (
             <Route path="/" element={<RootRedirect />} />
             <Route path="/auth" element={<Auth />} />
 
-            <Route
-              path="/conductor"
-              element={
-                <ProtectedRoute requiredRole="conductor">
-                  <ConductorLayout>
-                    <ConductorDashboard />
-                  </ConductorLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/conductor/vehicles"
-              element={
-                <ProtectedRoute requiredRole="conductor">
-                  <ConductorLayout>
-                    <ConductorVehicles />
-                  </ConductorLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/conductor/documents"
-              element={
-                <ProtectedRoute requiredRole="conductor">
-                  <ConductorLayout>
-                    <ConductorDocuments />
-                  </ConductorLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/conductor/requests"
-              element={
-                <ProtectedRoute requiredRole="conductor">
-                  <ConductorLayout>
-                    <ConductorRequests />
-                  </ConductorLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/conductor/mileage"
-              element={
-                <ProtectedRoute requiredRole="conductor">
-                  <ConductorLayout>
-                    <ConductorMileage />
-                  </ConductorLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/conductor/messages"
-              element={
-                <ProtectedRoute requiredRole="conductor">
-                  <ConductorLayout>
-                    <ConductorMessages />
-                  </ConductorLayout>
-                </ProtectedRoute>
-              }
-            />
+            {/* Rutas Conductor */}
+            <Route path="/conductor" element={<ProtectedRoute requiredRole="conductor"><AppLayout><ConductorDashboard /></AppLayout></ProtectedRoute>} />
+            <Route path="/conductor/vehicles" element={<ProtectedRoute requiredRole="conductor"><AppLayout><ConductorVehicles /></AppLayout></ProtectedRoute>} />
+            <Route path="/conductor/documents" element={<ProtectedRoute requiredRole="conductor"><AppLayout><ConductorDocuments /></AppLayout></ProtectedRoute>} />
+            <Route path="/conductor/requests" element={<ProtectedRoute requiredRole="conductor"><AppLayout><ConductorRequests /></AppLayout></ProtectedRoute>} />
+            <Route path="/conductor/mileage" element={<ProtectedRoute requiredRole="conductor"><AppLayout><ConductorMileage /></AppLayout></ProtectedRoute>} />
+            <Route path="/conductor/messages" element={<ProtectedRoute requiredRole="conductor"><AppLayout><ConductorMessages /></AppLayout></ProtectedRoute>} />
 
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminLayout>
-                    <AdminDashboard />
-                  </AdminLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/search"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminLayout>
-                    <AdminSearch />
-                  </AdminLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/vehicles"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminLayout>
-                    <AdminVehicles />
-                  </AdminLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/requests"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminLayout>
-                    <AdminRequests />
-                  </AdminLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/messages"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminLayout>
-                    <AdminMessages />
-                  </AdminLayout>
-                </ProtectedRoute>
-              }
-            />
+            {/* Rutas Admin */}
+            <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminDashboard /></AppLayout></ProtectedRoute>} />
+            <Route path="/admin/search" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminSearch /></AppLayout></ProtectedRoute>} />
+            <Route path="/admin/vehicles" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminVehicles /></AppLayout></ProtectedRoute>} />
+            <Route path="/admin/requests" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminRequests /></AppLayout></ProtectedRoute>} />
+            <Route path="/admin/messages" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminMessages /></AppLayout></ProtectedRoute>} />
+            <Route path="/admin/users" element={<ProtectedRoute requiredRole="super_admin"><AppLayout><AdminUsers /></AppLayout></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
