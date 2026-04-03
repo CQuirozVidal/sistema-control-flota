@@ -42,20 +42,33 @@ export default function ConductorRequests() {
     if (!profile) return;
     setLoading(true);
     const form = new FormData(e.currentTarget);
+    const reqTypeId = form.get("request_type_id") as string;
+    const details = (form.get("details") as string).trim();
     const vehicleId = form.get("vehicle_id") as string;
     const amount = parseFloat(form.get("amount") as string);
 
+    if (!reqTypeId) {
+      toast({ title: "Tipo requerido", description: "Selecciona un tipo de solicitud.", variant: "destructive" });
+      setLoading(false);
+      return;
+    }
+    if (!details || details.length < 10) {
+      toast({ title: "Detalles insuficientes", description: "Describe tu solicitud con al menos 10 caracteres.", variant: "destructive" });
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase.from("requests").insert({
       profile_id: profile.id,
-      request_type_id: form.get("request_type_id") as string,
+      request_type_id: reqTypeId,
       vehicle_id: vehicleId === "none" ? null : vehicleId,
-      details: (form.get("details") as string).trim(),
-      amount: isNaN(amount) ? null : amount,
+      details,
+      amount: isNaN(amount) || amount <= 0 ? null : amount,
     });
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Solicitud creada exitosamente" });
+      toast({ title: "✅ Solicitud creada exitosamente" });
       setOpen(false);
       load();
     }
@@ -82,7 +95,7 @@ export default function ConductorRequests() {
             <DialogHeader><DialogTitle className="font-heading">Crear Solicitud</DialogTitle></DialogHeader>
             <form onSubmit={handleCreate} className="space-y-4">
               <div className="space-y-2">
-                <Label>Tipo de solicitud *</Label>
+                <Label>Tipo de solicitud <span className="text-destructive">*</span></Label>
                 <Select name="request_type_id" required>
                   <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
                   <SelectContent>
@@ -105,10 +118,10 @@ export default function ConductorRequests() {
                 <Input name="amount" type="number" step="1" min="0" placeholder="Ej: 150000" />
               </div>
               <div className="space-y-2">
-                <Label>Detalles *</Label>
-                <Textarea name="details" required placeholder="Describe tu solicitud con el mayor detalle posible..." maxLength={500} />
+                <Label>Detalles <span className="text-destructive">*</span> <span className="text-xs text-muted-foreground">(mín. 10 caracteres)</span></Label>
+                <Textarea name="details" required placeholder="Describe tu solicitud con el mayor detalle posible..." maxLength={500} minLength={10} rows={3} />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full h-10" disabled={loading}>
                 {loading ? "Creando..." : "Enviar Solicitud"}
               </Button>
             </form>
@@ -121,10 +134,13 @@ export default function ConductorRequests() {
       ) : (
         <div className="grid gap-3">
           {filtered.map((req: any) => (
-            <Card key={req.id} className="stat-card">
+            <Card key={req.id} className={`stat-card ${req.status === "pendiente" ? "border-warning/20" : ""}`}>
               <CardContent className="flex items-center gap-4 p-4">
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm">{req.request_types?.name}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-medium text-sm">{req.request_types?.name}</p>
+                    <StatusBadge status={req.status} />
+                  </div>
                   <p className="text-xs text-muted-foreground truncate mt-0.5">{req.details || "Sin detalles"}</p>
                   <div className="flex gap-3 text-xs text-muted-foreground mt-1">
                     {req.vehicles?.license_plate && <span>🚗 {req.vehicles.license_plate}</span>}
@@ -132,7 +148,6 @@ export default function ConductorRequests() {
                     <span>{new Date(req.created_at).toLocaleDateString("es-CL")}</span>
                   </div>
                 </div>
-                <StatusBadge status={req.status} />
               </CardContent>
             </Card>
           ))}

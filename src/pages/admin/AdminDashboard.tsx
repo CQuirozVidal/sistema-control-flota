@@ -5,7 +5,7 @@ import StatusBadge from "@/components/StatusBadge";
 import { Link } from "react-router-dom";
 import {
   Truck, Users, ClipboardList, FileText, AlertTriangle,
-  Search, MessageSquare, ArrowRight, TrendingUp, Wrench
+  Search, MessageSquare, ArrowRight, Wrench, DollarSign
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -13,6 +13,7 @@ export default function AdminDashboard() {
     vehicles: 0, activeVehicles: 0, conductors: 0,
     pendingRequests: 0, inProcessRequests: 0,
     expiringDocs: 0, totalDocs: 0, unreadMessages: 0,
+    totalRequests: 0, approvedThisMonth: 0,
   });
   const [recentRequests, setRecentRequests] = useState<any[]>([]);
   const [expiringDocs, setExpiringDocs] = useState<any[]>([]);
@@ -22,8 +23,9 @@ export default function AdminDashboard() {
       const now = new Date();
       const thirtyDays = new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10);
       const today = now.toISOString().slice(0, 10);
+      const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
 
-      const [vRes, vActiveRes, cRes, rPendRes, rProcRes, dExpRes, dTotalRes, msgRes, rRecentRes, dExpListRes] = await Promise.all([
+      const [vRes, vActiveRes, cRes, rPendRes, rProcRes, dExpRes, dTotalRes, msgRes, rRecentRes, dExpListRes, rTotalRes, rApprovedRes] = await Promise.all([
         supabase.from("vehicles").select("id", { count: "exact" }),
         supabase.from("vehicles").select("id", { count: "exact" }).eq("status", "active"),
         supabase.from("profiles").select("id", { count: "exact" }).eq("role", "conductor"),
@@ -32,8 +34,10 @@ export default function AdminDashboard() {
         supabase.from("documents").select("id", { count: "exact" }).lte("expiration_date", thirtyDays).gte("expiration_date", today),
         supabase.from("documents").select("id", { count: "exact" }),
         supabase.from("messages").select("id", { count: "exact" }).eq("status", "pendiente"),
-        supabase.from("requests").select("*, request_types(name), profiles(full_name), vehicles(license_plate)").in("status", ["pendiente", "en_proceso"]).order("created_at", { ascending: false }).limit(6),
+        supabase.from("requests").select("*, request_types(name), profiles(full_name), vehicles(license_plate)").in("status", ["pendiente", "en_proceso"]).order("created_at", { ascending: false }).limit(8),
         supabase.from("documents").select("*, document_types(name), profiles(full_name), vehicles(license_plate)").lte("expiration_date", thirtyDays).gte("expiration_date", today).order("expiration_date", { ascending: true }).limit(5),
+        supabase.from("requests").select("id", { count: "exact" }),
+        supabase.from("requests").select("id", { count: "exact" }).eq("status", "aprobado").gte("updated_at", monthStart),
       ]);
 
       setStats({
@@ -45,6 +49,8 @@ export default function AdminDashboard() {
         expiringDocs: dExpRes.count || 0,
         totalDocs: dTotalRes.count || 0,
         unreadMessages: msgRes.count || 0,
+        totalRequests: rTotalRes.count || 0,
+        approvedThisMonth: rApprovedRes.count || 0,
       });
       setRecentRequests(rRecentRes.data || []);
       setExpiringDocs(dExpListRes.data || []);
@@ -56,18 +62,38 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Alerta global */}
+      {/* Alerta "Existen tareas pendientes" */}
       {hasPending && (
         <div className="flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/5 p-4 animate-fade-in">
           <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold">Existen tareas pendientes</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {stats.pendingRequests > 0 && `${stats.pendingRequests} solicitud(es) pendiente(s). `}
-              {stats.inProcessRequests > 0 && `${stats.inProcessRequests} en proceso. `}
-              {stats.expiringDocs > 0 && `${stats.expiringDocs} documento(s) por vencer. `}
-              {stats.unreadMessages > 0 && `${stats.unreadMessages} mensaje(s) pendiente(s).`}
-            </p>
+            <p className="text-sm font-bold">Existen tareas pendientes</p>
+            <ul className="mt-1.5 space-y-0.5">
+              {stats.pendingRequests > 0 && (
+                <li className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <span className="h-1 w-1 rounded-full bg-warning shrink-0" />
+                  {stats.pendingRequests} solicitud(es) pendiente(s)
+                </li>
+              )}
+              {stats.inProcessRequests > 0 && (
+                <li className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <span className="h-1 w-1 rounded-full bg-info shrink-0" />
+                  {stats.inProcessRequests} solicitud(es) en proceso
+                </li>
+              )}
+              {stats.expiringDocs > 0 && (
+                <li className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <span className="h-1 w-1 rounded-full bg-destructive shrink-0" />
+                  {stats.expiringDocs} documento(s) por vencer
+                </li>
+              )}
+              {stats.unreadMessages > 0 && (
+                <li className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <span className="h-1 w-1 rounded-full bg-primary shrink-0" />
+                  {stats.unreadMessages} mensaje(s) sin respuesta
+                </li>
+              )}
+            </ul>
           </div>
         </div>
       )}
@@ -75,10 +101,10 @@ export default function AdminDashboard() {
       {/* Métricas principales */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {[
-          { icon: Truck, label: "Flota Total", value: `${stats.activeVehicles}/${stats.vehicles}`, sub: "activos", color: "bg-primary/10 text-primary" },
+          { icon: Truck, label: "Flota Activa", value: `${stats.activeVehicles}/${stats.vehicles}`, sub: "vehículos activos", color: "bg-primary/10 text-primary" },
           { icon: Users, label: "Conductores", value: stats.conductors, sub: "registrados", color: "bg-accent/10 text-accent" },
-          { icon: ClipboardList, label: "Solicitudes", value: stats.pendingRequests, sub: "pendientes", color: "bg-warning/10 text-warning" },
-          { icon: FileText, label: "Docs por Vencer", value: stats.expiringDocs, sub: "en 30 días", color: "bg-destructive/10 text-destructive" },
+          { icon: ClipboardList, label: "Solicitudes", value: stats.pendingRequests + stats.inProcessRequests, sub: `${stats.pendingRequests} pend. / ${stats.inProcessRequests} en proc.`, color: "bg-warning/10 text-warning" },
+          { icon: FileText, label: "Docs por Vencer", value: stats.expiringDocs, sub: "próximos 30 días", color: "bg-destructive/10 text-destructive" },
         ].map(({ icon: Icon, label, value, sub, color }) => (
           <Card key={label} className="stat-card">
             <CardContent className="flex items-center gap-3 p-4 sm:p-5">
@@ -86,7 +112,7 @@ export default function AdminDashboard() {
                 <Icon className="h-5 w-5" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">{label}</p>
+                <p className="text-[11px] text-muted-foreground">{label}</p>
                 <p className="text-xl font-bold font-heading">{value}</p>
                 <p className="text-[10px] text-muted-foreground">{sub}</p>
               </div>
@@ -95,16 +121,34 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Accesos rápidos + Solicitudes pendientes */}
+      {/* Fila secundaria de métricas */}
+      <div className="grid gap-4 grid-cols-3">
+        {[
+          { icon: MessageSquare, label: "Mensajes Pendientes", value: stats.unreadMessages, color: "text-info" },
+          { icon: DollarSign, label: "Aprobadas este mes", value: stats.approvedThisMonth, color: "text-accent" },
+          { icon: Wrench, label: "Total Solicitudes", value: stats.totalRequests, color: "text-muted-foreground" },
+        ].map(({ icon: Icon, label, value, color }) => (
+          <Card key={label} className="stat-card">
+            <CardContent className="flex items-center gap-3 p-3">
+              <Icon className={`h-4 w-4 ${color} shrink-0`} />
+              <div>
+                <p className="text-[10px] text-muted-foreground">{label}</p>
+                <p className="text-lg font-bold font-heading">{value}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Accesos rápidos + Solicitudes activas */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Accesos rápidos */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="font-heading text-base">Acceso Rápido</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-2">
             {[
-              { to: "/admin/search", icon: Search, label: "Buscar por Patente", desc: "Info consolidada", color: "text-primary" },
+              { to: "/admin/search", icon: Search, label: "Buscar por Patente", desc: "Info consolidada por vehículo", color: "text-primary" },
               { to: "/admin/vehicles", icon: Truck, label: "Gestión de Vehículos", desc: `${stats.vehicles} en flota`, color: "text-accent" },
               { to: "/admin/requests", icon: ClipboardList, label: "Solicitudes", desc: `${stats.pendingRequests} pendientes`, color: "text-warning" },
               { to: "/admin/messages", icon: MessageSquare, label: "Mensajes", desc: `${stats.unreadMessages} sin respuesta`, color: "text-info" },
@@ -121,7 +165,6 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Solicitudes recientes */}
         <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="font-heading text-base">Solicitudes Activas</CardTitle>
@@ -137,7 +180,10 @@ export default function AdminDashboard() {
                 {recentRequests.map((req: any) => (
                   <div key={req.id} className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/30 transition-colors">
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium">{req.request_types?.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium">{req.request_types?.name}</p>
+                        {req.amount && <span className="text-[10px] text-muted-foreground">💰 ${Number(req.amount).toLocaleString("es-CL")}</span>}
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         {req.profiles?.full_name} {req.vehicles?.license_plate ? `• ${req.vehicles.license_plate}` : ""}
                         {" • "}{new Date(req.created_at).toLocaleDateString("es-CL")}
@@ -173,7 +219,7 @@ export default function AdminDashboard() {
                         {doc.profiles?.full_name} {doc.vehicles?.license_plate ? `• ${doc.vehicles.license_plate}` : ""}
                       </p>
                     </div>
-                    <span className={`text-xs font-medium ${daysLeft <= 7 ? "text-destructive" : "text-warning"}`}>
+                    <span className={`text-xs font-semibold ${daysLeft <= 7 ? "text-destructive" : "text-warning"}`}>
                       {daysLeft} día(s)
                     </span>
                   </div>
