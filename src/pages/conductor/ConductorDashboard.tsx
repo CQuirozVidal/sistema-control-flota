@@ -3,19 +3,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import StatusBadge from "@/components/StatusBadge";
-import { Truck, FileText, ClipboardList, AlertTriangle, Gauge, MessageSquare, ArrowRight } from "lucide-react";
+import { Truck, FileText, ClipboardList, AlertTriangle, Gauge, MessageSquare, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function ConductorDashboard() {
   const { profile } = useAuth();
   const [stats, setStats] = useState({
     vehicles: 0, documents: 0, pendingRequests: 0,
-    totalRequests: 0, pendingMessages: 0, lastMileage: 0,
-    expiringDocs: 0,
+    totalRequests: 0, pendingMessages: 0, inProcessMessages: 0,
+    lastMileage: 0, expiringDocs: 0,
   });
   const [recentRequests, setRecentRequests] = useState<any[]>([]);
   const [recentMessages, setRecentMessages] = useState<any[]>([]);
-  const [hasPending, setHasPending] = useState(false);
+  const [pendingTasks, setPendingTasks] = useState<string[]>([]);
 
   useEffect(() => {
     if (!profile) return;
@@ -23,28 +23,41 @@ export default function ConductorDashboard() {
       const now = new Date();
       const thirtyDays = new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10);
 
-      const [vRes, dRes, rRes, mRes, msgRes, expRes, msgListRes] = await Promise.all([
+      const [vRes, dRes, rRes, mRes, msgPendRes, msgProcRes, expRes, msgListRes] = await Promise.all([
         supabase.from("vehicle_assignments").select("id", { count: "exact" }).eq("profile_id", profile.id),
         supabase.from("documents").select("id", { count: "exact" }).eq("profile_id", profile.id),
         supabase.from("requests").select("*, request_types(name)").eq("profile_id", profile.id).order("created_at", { ascending: false }).limit(5),
         supabase.from("mileage_records").select("kilometers").eq("profile_id", profile.id).order("recorded_date", { ascending: false }).limit(1),
         supabase.from("messages").select("id", { count: "exact" }).eq("receiver_id", profile.id).eq("status", "pendiente"),
+        supabase.from("messages").select("id", { count: "exact" }).eq("receiver_id", profile.id).eq("status", "en_proceso"),
         supabase.from("documents").select("id", { count: "exact" }).eq("profile_id", profile.id).lte("expiration_date", thirtyDays).gte("expiration_date", now.toISOString().slice(0, 10)),
         supabase.from("messages").select("*, sender:profiles!messages_sender_id_fkey(full_name)").eq("receiver_id", profile.id).order("created_at", { ascending: false }).limit(3),
       ]);
 
       const pendingReqs = (rRes.data || []).filter((r: any) => r.status === "pendiente" || r.status === "en_proceso");
+      const pendingMsgs = msgPendRes.count || 0;
+      const inProcMsgs = msgProcRes.count || 0;
+      const expDocs = expRes.count || 0;
+
+      // Construir lista de tareas pendientes (requerimiento del cliente)
+      const tasks: string[] = [];
+      if (pendingMsgs > 0) tasks.push(`${pendingMsgs} mensaje(s) pendiente(s)`);
+      if (inProcMsgs > 0) tasks.push(`${inProcMsgs} mensaje(s) en proceso`);
+      if (pendingReqs.length > 0) tasks.push(`${pendingReqs.length} solicitud(es) sin cerrar`);
+      if (expDocs > 0) tasks.push(`${expDocs} documento(s) por vencer en 30 días`);
+      setPendingTasks(tasks);
+
       setRecentRequests(rRes.data || []);
       setRecentMessages(msgListRes.data || []);
-      setHasPending(pendingReqs.length > 0 || (msgRes.count || 0) > 0 || (expRes.count || 0) > 0);
       setStats({
         vehicles: vRes.count || 0,
         documents: dRes.count || 0,
         pendingRequests: pendingReqs.length,
         totalRequests: (rRes.data || []).length,
-        pendingMessages: msgRes.count || 0,
+        pendingMessages: pendingMsgs,
+        inProcessMessages: inProcMsgs,
         lastMileage: mRes.data?.[0]?.kilometers || 0,
-        expiringDocs: expRes.count || 0,
+        expiringDocs: expDocs,
       });
     };
     load();
@@ -52,37 +65,47 @@ export default function ConductorDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Alerta principal de tareas pendientes */}
-      {hasPending && (
-        <div className="flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/5 p-4">
+      {/* Alerta "Existen tareas pendientes" — requerimiento del cliente */}
+      {pendingTasks.length > 0 && (
+        <div className="flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/5 p-4 animate-fade-in">
           <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold">Existen tareas pendientes</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {stats.pendingRequests > 0 && `${stats.pendingRequests} solicitud(es) sin cerrar. `}
-              {stats.pendingMessages > 0 && `${stats.pendingMessages} mensaje(s) pendiente(s). `}
-              {stats.expiringDocs > 0 && `${stats.expiringDocs} documento(s) por vencer en 30 días.`}
-            </p>
+            <p className="text-sm font-bold text-foreground">Existen tareas pendientes</p>
+            <ul className="mt-1.5 space-y-0.5">
+              {pendingTasks.map((task, i) => (
+                <li key={i} className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <span className="h-1 w-1 rounded-full bg-warning shrink-0" />
+                  {task}
+                </li>
+              ))}
+            </ul>
           </div>
+        </div>
+      )}
+
+      {pendingTasks.length === 0 && (
+        <div className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/5 p-4">
+          <CheckCircle2 className="h-5 w-5 text-accent shrink-0" />
+          <p className="text-sm font-medium text-accent">¡Todo al día! No tienes tareas pendientes.</p>
         </div>
       )}
 
       {/* Métricas rápidas */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {[
-          { icon: Truck, label: "Vehículos Asignados", value: stats.vehicles, to: "/conductor/vehicles", color: "bg-primary/10 text-primary" },
+          { icon: Truck, label: "Vehículos", value: stats.vehicles, to: "/conductor/vehicles", color: "bg-primary/10 text-primary" },
           { icon: FileText, label: "Documentos", value: stats.documents, to: "/conductor/documents", color: "bg-accent/10 text-accent" },
-          { icon: ClipboardList, label: "Solicitudes Pendientes", value: stats.pendingRequests, to: "/conductor/requests", color: "bg-warning/10 text-warning" },
-          { icon: Gauge, label: "Último Kilometraje", value: stats.lastMileage > 0 ? `${stats.lastMileage.toLocaleString("es-CL")} km` : "—", to: "/conductor/mileage", color: "bg-info/10 text-info" },
+          { icon: ClipboardList, label: "Solicitudes Activas", value: stats.pendingRequests, to: "/conductor/requests", color: "bg-warning/10 text-warning" },
+          { icon: Gauge, label: "Último Km", value: stats.lastMileage > 0 ? `${stats.lastMileage.toLocaleString("es-CL")}` : "—", to: "/conductor/mileage", color: "bg-info/10 text-info" },
         ].map(({ icon: Icon, label, value, to, color }) => (
           <Link key={label} to={to}>
-            <Card className="stat-card group cursor-pointer hover:border-primary/30">
+            <Card className="stat-card group cursor-pointer hover:border-primary/30 transition-all">
               <CardContent className="flex items-center gap-3 p-4 sm:p-5">
                 <div className={`flex h-10 w-10 items-center justify-center rounded-lg shrink-0 ${color}`}>
                   <Icon className="h-5 w-5" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground truncate">{label}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{label}</p>
                   <p className="text-xl font-bold font-heading">{value}</p>
                 </div>
               </CardContent>

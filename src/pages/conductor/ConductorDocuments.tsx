@@ -43,10 +43,29 @@ export default function ConductorDocuments() {
     setUploading(true);
     const form = new FormData(e.currentTarget);
     const file = form.get("file") as File;
+    const docTypeId = form.get("document_type_id") as string;
 
-    // Validación de archivo (max 10MB)
+    // Validaciones
+    if (!docTypeId) {
+      toast({ title: "Tipo requerido", description: "Selecciona un tipo de documento.", variant: "destructive" });
+      setUploading(false);
+      return;
+    }
+    if (!file || file.size === 0) {
+      toast({ title: "Archivo requerido", description: "Selecciona un archivo para subir.", variant: "destructive" });
+      setUploading(false);
+      return;
+    }
     if (file.size > 10 * 1024 * 1024) {
-      toast({ title: "Archivo muy grande", description: "El tamaño máximo es 10MB.", variant: "destructive" });
+      toast({ title: "Archivo muy grande", description: "El tamaño máximo es 10 MB.", variant: "destructive" });
+      setUploading(false);
+      return;
+    }
+
+    const allowed = [".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx", ".xls", ".xlsx"];
+    const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+    if (!allowed.includes(ext)) {
+      toast({ title: "Formato no permitido", description: `Formatos aceptados: ${allowed.join(", ")}`, variant: "destructive" });
       setUploading(false);
       return;
     }
@@ -64,18 +83,18 @@ export default function ConductorDocuments() {
 
     const { error } = await supabase.from("documents").insert({
       profile_id: profile.id,
-      document_type_id: form.get("document_type_id") as string,
+      document_type_id: docTypeId,
       vehicle_id: vehicleId === "none" ? null : vehicleId,
       file_url: urlData.publicUrl,
       file_key: fileKey,
-      description: form.get("description") as string,
+      description: (form.get("description") as string)?.trim() || "",
       expiration_date: (form.get("expiration_date") as string) || null,
     });
 
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Documento subido correctamente" });
+      toast({ title: "✅ Documento subido correctamente" });
       setOpen(false);
       load();
     }
@@ -83,7 +102,7 @@ export default function ConductorDocuments() {
   };
 
   const handleDelete = async (id: string, fileKey: string) => {
-    if (!confirm("¿Estás seguro de eliminar este documento?")) return;
+    if (!confirm("¿Estás seguro de eliminar este documento? Esta acción no se puede deshacer.")) return;
     await supabase.storage.from("documents").remove([fileKey]);
     await supabase.from("documents").delete().eq("id", id);
     toast({ title: "Documento eliminado" });
@@ -96,7 +115,6 @@ export default function ConductorDocuments() {
     return true;
   });
 
-  // Detectar documentos próximos a vencer
   const isExpiringSoon = (date: string | null) => {
     if (!date) return false;
     const diff = new Date(date).getTime() - Date.now();
@@ -114,7 +132,7 @@ export default function ConductorDocuments() {
             <DialogHeader><DialogTitle className="font-heading">Subir Documento</DialogTitle></DialogHeader>
             <form onSubmit={handleUpload} className="space-y-4">
               <div className="space-y-2">
-                <Label>Tipo de documento *</Label>
+                <Label>Tipo de documento <span className="text-destructive">*</span></Label>
                 <Select name="document_type_id" required>
                   <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
                   <SelectContent>
@@ -141,10 +159,11 @@ export default function ConductorDocuments() {
                 <Input name="expiration_date" type="date" />
               </div>
               <div className="space-y-2">
-                <Label>Archivo * (máx. 10MB)</Label>
+                <Label>Archivo <span className="text-destructive">*</span> <span className="text-xs text-muted-foreground">(máx. 10 MB)</span></Label>
                 <Input name="file" type="file" required accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx" />
+                <p className="text-[10px] text-muted-foreground">Formatos: PDF, JPG, PNG, DOC, XLS</p>
               </div>
-              <Button type="submit" className="w-full" disabled={uploading}>
+              <Button type="submit" className="w-full h-10" disabled={uploading}>
                 {uploading ? "Subiendo archivo..." : "Subir Documento"}
               </Button>
             </form>
@@ -170,6 +189,11 @@ export default function ConductorDocuments() {
             <SelectItem value="rechazado">Rechazado</SelectItem>
           </SelectContent>
         </Select>
+        {(filterType !== "all" || filterStatus !== "all") && (
+          <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => { setFilterType("all"); setFilterStatus("all"); }}>
+            Limpiar filtros
+          </Button>
+        )}
       </div>
 
       {filtered.length === 0 ? (
@@ -194,7 +218,7 @@ export default function ConductorDocuments() {
                   <p className="text-xs text-muted-foreground truncate">{doc.description || "Sin descripción"}</p>
                   <div className="flex gap-3 text-xs text-muted-foreground mt-0.5">
                     {doc.vehicles?.license_plate && <span>🚗 {doc.vehicles.license_plate}</span>}
-                    {doc.expiration_date && <span>📅 Vence: {new Date(doc.expiration_date).toLocaleDateString("es-CL")}</span>}
+                    {doc.expiration_date && <span>📅 {new Date(doc.expiration_date).toLocaleDateString("es-CL")}</span>}
                     <span>{new Date(doc.created_at).toLocaleDateString("es-CL")}</span>
                   </div>
                 </div>
