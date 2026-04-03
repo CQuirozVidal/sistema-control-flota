@@ -414,9 +414,23 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_conductor: { Args: { _user_id: string }; Returns: boolean }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      set_user_role_by_email: {
+        Args: { _email: string; _role: Database["public"]["Enums"]["app_role"] }
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          phone: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          user_id: string
+        }
+      }
     }
     Enums: {
-      app_role: "admin" | "conductor"
+      app_role: "admin" | "conductor" | "super_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -544,7 +558,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "conductor"],
+      app_role: ["admin", "conductor", "super_admin"],
     },
   },
 } as const

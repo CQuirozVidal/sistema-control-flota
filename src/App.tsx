@@ -18,6 +18,7 @@ import AdminSearch from "@/pages/admin/AdminSearch";
 import AdminVehicles from "@/pages/admin/AdminVehicles";
 import AdminRequests from "@/pages/admin/AdminRequests";
 import AdminMessages from "@/pages/admin/AdminMessages";
+import AdminUsers from "@/pages/admin/AdminUsers";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,7 +29,7 @@ function RootRedirect() {
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
   if (!user) return <Navigate to="/auth" replace />;
   if (!profile) return <div className="flex min-h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
-  return <Navigate to={profile.role === "admin" ? "/admin" : "/conductor"} replace />;
+  return <Navigate to={profile.role === "conductor" ? "/conductor" : "/admin"} replace />;
 }
 
 const App = () => (
@@ -56,6 +57,7 @@ const App = () => (
             <Route path="/admin/vehicles" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminVehicles /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/requests" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminRequests /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/messages" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminMessages /></AppLayout></ProtectedRoute>} />
+            <Route path="/admin/users" element={<ProtectedRoute requiredRole="super_admin"><AppLayout><AdminUsers /></AppLayout></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

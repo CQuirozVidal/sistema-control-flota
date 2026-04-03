@@ -3,11 +3,21 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface Props {
   children: React.ReactNode;
-  requiredRole?: "admin" | "conductor";
+  requiredRole?: "admin" | "conductor" | "super_admin";
 }
 
 export default function ProtectedRoute({ children, requiredRole }: Props) {
   const { user, profile, loading } = useAuth();
+
+  const getHomePath = (role: Props["requiredRole"]) => (
+    role === "conductor" ? "/conductor" : "/admin"
+  );
+
+  const hasRequiredRole = (role: Props["requiredRole"], required: Props["requiredRole"]) => {
+    if (!role || !required) return false;
+    if (required === "admin") return role === "admin" || role === "super_admin";
+    return role === required;
+  };
 
   if (loading) {
     return (
@@ -23,8 +33,8 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
       <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
     </div>
   );
-  if (requiredRole && profile.role !== requiredRole) {
-    return <Navigate to={profile.role === "admin" ? "/admin" : "/conductor"} replace />;
+  if (requiredRole && !hasRequiredRole(profile.role, requiredRole)) {
+    return <Navigate to={getHomePath(profile.role)} replace />;
   }
 
   return <>{children}</>;

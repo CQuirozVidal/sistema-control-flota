@@ -4,11 +4,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   Truck, LayoutDashboard, FileText, ClipboardList, Gauge, MessageSquare,
-  Search, LogOut, Menu, X, ChevronRight, User, Settings
+  Search, LogOut, Menu, X, ChevronRight, User, Users
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const adminLinks = [
+const baseAdminLinks = [
   { to: "/admin", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/admin/search", icon: Search, label: "Buscar Patente" },
   { to: "/admin/vehicles", icon: Truck, label: "Vehículos" },
@@ -26,9 +26,12 @@ const conductorLinks = [
 ];
 
 export default function AppLayout({ children }: { children: ReactNode }) {
-  const { profile, signOut, isAdmin } = useAuth();
+  const { profile, signOut, isAdmin, isSuperAdmin } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const adminLinks = isSuperAdmin
+    ? [...baseAdminLinks, { to: "/admin/users", icon: Users, label: "Usuarios" }]
+    : baseAdminLinks;
   const links = isAdmin ? adminLinks : conductorLinks;
 
   return (
@@ -90,7 +93,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{profile?.full_name || "Usuario"}</p>
-              <p className="text-[11px] text-sidebar-foreground/50 capitalize">{profile?.role === "admin" ? "Administrador" : "Conductor"}</p>
+              <p className="text-[11px] text-sidebar-foreground/50 capitalize">
+                {profile?.role === "super_admin"
+                  ? "Super Admin"
+                  : profile?.role === "admin"
+                    ? "Administrador"
+                    : "Conductor"}
+              </p>
             </div>
           </div>
           <Button

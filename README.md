@@ -24,6 +24,7 @@ Este proyecto implementa una interfaz para controlar procesos clave de una flota
 
 - Autenticacion y control de acceso por rol.
 - Dashboard y modulos para `admin`.
+- Gestion de usuarios y roles para `super_admin`.
 - Dashboard y modulos para `conductor`.
 - Integracion con Supabase para autenticacion y datos.
 - UI moderna basada en componentes reutilizables.
@@ -142,16 +143,28 @@ npm run test
 | Ruta | Acceso | Descripcion |
 |---|---|---|
 | `/auth` | Publico | Login/autenticacion |
-| `/admin` | Rol `admin` | Dashboard administrador |
-| `/admin/vehicles` | Rol `admin` | Gestion de vehiculos |
-| `/admin/requests` | Rol `admin` | Gestion de solicitudes |
-| `/admin/messages` | Rol `admin` | Mensajeria |
+| `/admin` | Rol `admin` o `super_admin` | Dashboard administrador |
+| `/admin/vehicles` | Rol `admin` o `super_admin` | Gestion de vehiculos |
+| `/admin/requests` | Rol `admin` o `super_admin` | Gestion de solicitudes |
+| `/admin/messages` | Rol `admin` o `super_admin` | Mensajeria |
+| `/admin/users` | Rol `super_admin` | Gestion de usuarios y permisos |
 | `/conductor` | Rol `conductor` | Dashboard conductor |
 | `/conductor/vehicles` | Rol `conductor` | Mis vehiculos |
 | `/conductor/documents` | Rol `conductor` | Documentos |
 | `/conductor/requests` | Rol `conductor` | Solicitudes |
 | `/conductor/mileage` | Rol `conductor` | Kilometraje |
 | `/conductor/messages` | Rol `conductor` | Mensajeria |
+
+## Crear primer super admin
+
+1. Registra el usuario normalmente desde `/auth`.
+2. En el SQL Editor de Supabase, ejecuta:
+
+```sql
+select public.set_user_role_by_email('tu-correo@dominio.com', 'super_admin');
+```
+
+3. Cierra sesion e inicia de nuevo para refrescar permisos.
 
 ## Guia rapida para contribuir
 
