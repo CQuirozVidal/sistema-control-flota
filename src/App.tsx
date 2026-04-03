@@ -15,12 +15,14 @@ import ConductorMileage from "@/pages/conductor/ConductorMileage";
 import ConductorMessages from "@/pages/conductor/ConductorMessages";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminSearch from "@/pages/admin/AdminSearch";
+import AdminVehicles from "@/pages/admin/AdminVehicles";
 import AdminRequests from "@/pages/admin/AdminRequests";
 import AdminMessages from "@/pages/admin/AdminMessages";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
 
+/** Redirige al dashboard según el rol del usuario autenticado */
 function RootRedirect() {
   const { user, profile, loading } = useAuth();
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
@@ -40,7 +42,7 @@ const App = () => (
             <Route path="/" element={<RootRedirect />} />
             <Route path="/auth" element={<Auth />} />
 
-            {/* Conductor routes */}
+            {/* Rutas Conductor */}
             <Route path="/conductor" element={<ProtectedRoute requiredRole="conductor"><AppLayout><ConductorDashboard /></AppLayout></ProtectedRoute>} />
             <Route path="/conductor/vehicles" element={<ProtectedRoute requiredRole="conductor"><AppLayout><ConductorVehicles /></AppLayout></ProtectedRoute>} />
             <Route path="/conductor/documents" element={<ProtectedRoute requiredRole="conductor"><AppLayout><ConductorDocuments /></AppLayout></ProtectedRoute>} />
@@ -48,9 +50,10 @@ const App = () => (
             <Route path="/conductor/mileage" element={<ProtectedRoute requiredRole="conductor"><AppLayout><ConductorMileage /></AppLayout></ProtectedRoute>} />
             <Route path="/conductor/messages" element={<ProtectedRoute requiredRole="conductor"><AppLayout><ConductorMessages /></AppLayout></ProtectedRoute>} />
 
-            {/* Admin routes */}
+            {/* Rutas Admin */}
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminDashboard /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/search" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminSearch /></AppLayout></ProtectedRoute>} />
+            <Route path="/admin/vehicles" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminVehicles /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/requests" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminRequests /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/messages" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminMessages /></AppLayout></ProtectedRoute>} />
 

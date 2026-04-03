@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Truck } from "lucide-react";
+import PageHeader from "@/components/PageHeader";
+import { Truck, Calendar, Palette } from "lucide-react";
 
 export default function ConductorVehicles() {
   const { profile } = useAuth();
@@ -18,32 +19,46 @@ export default function ConductorVehicles() {
   }, [profile]);
 
   return (
-    <div className="space-y-6">
-      <h2 className="font-heading text-xl font-bold">Mis Vehículos</h2>
+    <div>
+      <PageHeader title="Mis Vehículos" description="Vehículos asignados a tu perfil" />
+
       {vehicles.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-            <Truck className="h-12 w-12 mb-3 opacity-40" />
-            <p>No tienes vehículos asignados.</p>
-          </CardContent>
-        </Card>
+        <Card><CardContent className="empty-state"><Truck /><p>No tienes vehículos asignados aún.</p></CardContent></Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {vehicles.map((va: any) => {
             const v = va.vehicles;
             return (
-              <Card key={va.id} className="stat-card">
-                <CardHeader className="pb-2">
-                  <CardTitle className="font-heading text-lg flex items-center gap-2">
-                    <Truck className="h-5 w-5 text-primary" />
-                    {v.license_plate}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-1 text-sm">
-                  <p><span className="text-muted-foreground">Marca:</span> {v.make}</p>
-                  <p><span className="text-muted-foreground">Modelo:</span> {v.model}</p>
-                  <p><span className="text-muted-foreground">Año:</span> {v.year}</p>
-                  <p><span className="text-muted-foreground">Color:</span> {v.color}</p>
+              <Card key={va.id} className="stat-card overflow-hidden">
+                {/* Header con patente destacada */}
+                <div className="bg-primary/5 border-b px-5 py-3 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Truck className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-heading font-bold text-lg tracking-wider">{v.license_plate}</p>
+                    <p className="text-xs text-muted-foreground">{v.status === "active" ? "Activo" : v.status}</p>
+                  </div>
+                </div>
+                <CardContent className="p-5 space-y-2">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Marca</p>
+                      <p className="font-medium">{v.make}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Modelo</p>
+                      <p className="font-medium">{v.model}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Año</p>
+                      <p className="font-medium flex items-center gap-1"><Calendar className="h-3 w-3" />{v.year || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Color</p>
+                      <p className="font-medium flex items-center gap-1"><Palette className="h-3 w-3" />{v.color || "—"}</p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             );
