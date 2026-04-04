@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import StatusBadge from "@/components/StatusBadge";
 import PageHeader from "@/components/PageHeader";
 import { Plus, FileText, Trash2, Download, AlertCircle } from "lucide-react";
+import { DOCUMENT_ACCEPT_ATTR, isAllowedDocumentFile } from "@/shared/utils/fileValidation";
+import { downloadDocumentFile } from "@/shared/utils/storageFiles";
 
 export default function ConductorDocuments() {
   const { profile, user } = useAuth();
@@ -43,10 +45,25 @@ export default function ConductorDocuments() {
     setUploading(true);
     const form = new FormData(e.currentTarget);
     const file = form.get("file") as File;
+    if (!file || file.size === 0) {
+      toast({ title: "Archivo requerido", description: "Selecciona un PDF o imagen para continuar.", variant: "destructive" });
+      setUploading(false);
+      return;
+    }
 
     // Validación de archivo (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       toast({ title: "Archivo muy grande", description: "El tamaño máximo es 10MB.", variant: "destructive" });
+      setUploading(false);
+      return;
+    }
+
+    if (!isAllowedDocumentFile(file)) {
+      toast({
+        title: "Formato no permitido",
+        description: "Solo se permiten archivos PDF o fotos (JPG, PNG, WEBP, HEIC, HEIF).",
+        variant: "destructive",
+      });
       setUploading(false);
       return;
     }
@@ -88,6 +105,18 @@ export default function ConductorDocuments() {
     await supabase.from("documents").delete().eq("id", id);
     toast({ title: "Documento eliminado" });
     load();
+  };
+
+  const handleDownload = async (fileKey: string) => {
+    try {
+      await downloadDocumentFile(fileKey);
+    } catch (error) {
+      toast({
+        title: "No se pudo descargar",
+        description: error instanceof Error ? error.message : "Error descargando archivo",
+        variant: "destructive",
+      });
+    }
   };
 
   const filtered = documents.filter((d: any) => {
@@ -142,7 +171,8 @@ export default function ConductorDocuments() {
               </div>
               <div className="space-y-2">
                 <Label>Archivo * (máx. 10MB)</Label>
-                <Input name="file" type="file" required accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx" />
+                <Input name="file" type="file" required accept={DOCUMENT_ACCEPT_ATTR} />
+                <p className="text-[11px] text-muted-foreground">Formatos permitidos: PDF e imágenes (JPG, PNG, WEBP, HEIC, HEIF).</p>
               </div>
               <Button type="submit" className="w-full" disabled={uploading}>
                 {uploading ? "Subiendo archivo..." : "Subir Documento"}
@@ -200,8 +230,14 @@ export default function ConductorDocuments() {
                 </div>
                 <StatusBadge status={doc.status} />
                 <div className="flex gap-1 shrink-0">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                    <a href={doc.file_url} target="_blank" rel="noreferrer" title="Ver archivo"><Download className="h-4 w-4" /></a>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => handleDownload(doc.file_key)}
+                    title="Descargar archivo"
+                  >
+                    <Download className="h-4 w-4" />
                   </Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(doc.id, doc.file_key)} title="Eliminar">
                     <Trash2 className="h-4 w-4" />

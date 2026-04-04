@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "reset:conductors:password": "node scripts/reset-conductors-password.mjs",
     "deploy": "npm run build && npx gh-pages -d dist"
   },
   "dependencies": {

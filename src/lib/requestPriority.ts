@@ -68,8 +68,8 @@ const PRIORITY_INFO: Record<RequestPriorityKey, RequestPriorityInfo> = {
 
 const REQUEST_TYPE_PRIORITY_MAP: Record<string, RequestPriorityKey> = {
   combustible: "urgent",
-  mantencion: "high",
-  repuestos: "medium_high",
+  repuestos: "high",
+  mantencion: "medium_high",
   prestamo: "low",
   anticipo: "very_low",
 };
@@ -82,6 +82,34 @@ const PRIORITY_ORDER: RequestPriorityKey[] = [
   "very_low",
   "undefined",
 ];
+
+const WAITING_ESCALATION_RULES = [
+  { minDays: 14, rankReduction: 2 },
+  { minDays: 7, rankReduction: 1 },
+];
+
+function parseDateValue(value?: string | null) {
+  const parsed = new Date(value ?? "").getTime();
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function getWaitingDays(createdAt?: string | null, nowTimestamp = Date.now()) {
+  const createdAtTimestamp = parseDateValue(createdAt);
+  if (createdAtTimestamp === null) {
+    return 0;
+  }
+
+  return Math.max(0, Math.floor((nowTimestamp - createdAtTimestamp) / 86400000));
+}
+
+function getEscalatedRank(baseRank: number, waitingDays: number) {
+  const matchingRule = WAITING_ESCALATION_RULES.find((rule) => waitingDays >= rule.minDays);
+  if (!matchingRule) {
+    return baseRank;
+  }
+
+  return Math.max(0, baseRank - matchingRule.rankReduction);
+}
 
 export function normalizeRequestTypeName(value?: string | null) {
   return (value ?? "")
@@ -102,9 +130,21 @@ export function sortRequestsByPriority<T>(
   getRequestTypeName: (request: T) => string | null | undefined,
   getCreatedAt?: (request: T) => string | null | undefined,
 ) {
+  const nowTimestamp = Date.now();
+
   return [...requests].sort((left, right) => {
     const leftPriority = getRequestPriorityInfo(getRequestTypeName(left));
     const rightPriority = getRequestPriorityInfo(getRequestTypeName(right));
+
+    const leftWaitingDays = getWaitingDays(getCreatedAt?.(left), nowTimestamp);
+    const rightWaitingDays = getWaitingDays(getCreatedAt?.(right), nowTimestamp);
+
+    const leftEscalatedRank = getEscalatedRank(leftPriority.rank, leftWaitingDays);
+    const rightEscalatedRank = getEscalatedRank(rightPriority.rank, rightWaitingDays);
+
+    if (leftEscalatedRank !== rightEscalatedRank) {
+      return leftEscalatedRank - rightEscalatedRank;
+    }
 
     if (leftPriority.rank !== rightPriority.rank) {
       return leftPriority.rank - rightPriority.rank;
@@ -114,11 +154,28 @@ export function sortRequestsByPriority<T>(
       return 0;
     }
 
-    const leftDate = new Date(getCreatedAt(left) ?? 0).getTime();
-    const rightDate = new Date(getCreatedAt(right) ?? 0).getTime();
+    const leftDate = parseDateValue(getCreatedAt(left));
+    const rightDate = parseDateValue(getCreatedAt(right));
 
-    return rightDate - leftDate;
+    if (leftDate === null && rightDate === null) {
+      return 0;
+    }
+
+    if (leftDate === null) {
+      return 1;
+    }
+
+    if (rightDate === null) {
+      return -1;
+    }
+
+    // La más antigua primero: mayor tiempo de espera = mayor prioridad.
+    return leftDate - rightDate;
   });
+}
+
+export function getRequestWaitingDays(createdAt?: string | null) {
+  return getWaitingDays(createdAt);
 }
 
 export function buildRequestPriorityBreakdown<T>(
