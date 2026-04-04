@@ -485,3 +485,24 @@
 [2026-04-03T23:13:17.843Z] UI auth.login.submit {"email":"antonia.gajardo@demo-flota.cl"}
 [2026-04-03T23:13:18.400Z] API POST /supabase/auth/v1/token?grant_type=password -> 400 (555ms)
 [2026-04-03T23:13:18.403Z] UI auth.login.failed {"email":"antonia.gajardo@demo-flota.cl","message":"Invalid login credentials"}
+
+--- Restart 2026-04-04T17:17:35.063Z ---
+[2026-04-04T17:18:43.931Z] UI auth.login.submit {"email":"antonia.gajardo@demo-flota.cl"}
+[2026-04-04T17:18:43.934Z] UI auth.login.success {"email":"antonia.gajardo@demo-flota.cl"}
+[2026-04-04T17:18:48.187Z] UI navigation.menu.click {"from":"/conductor","to":"/conductor/vehicles","role":"conductor"}
+[2026-04-04T17:18:48.897Z] UI navigation.menu.click {"from":"/conductor/vehicles","to":"/conductor/documents","role":"conductor"}
+[2026-04-04T17:18:49.573Z] UI navigation.menu.click {"from":"/conductor/documents","to":"/conductor/requests","role":"conductor"}
+[2026-04-04T17:18:50.603Z] UI navigation.menu.click {"from":"/conductor/requests","to":"/conductor/mileage","role":"conductor"}
+[2026-04-04T17:18:51.318Z] UI navigation.menu.click {"from":"/conductor/mileage","to":"/conductor/messages","role":"conductor"}
+[2026-04-04T17:18:54.411Z] UI navigation.menu.click {"from":"/conductor/messages","to":"/conductor/documents","role":"conductor"}
+[2026-04-04T17:18:54.835Z] UI navigation.menu.click {"from":"/conductor/documents","to":"/conductor/vehicles","role":"conductor"}
+[2026-04-04T17:18:55.298Z] UI navigation.menu.click {"from":"/conductor/vehicles","to":"/conductor","role":"conductor"}
+[2026-04-04T17:18:59.569Z] UI navigation.menu.click {"from":"/conductor","to":"/conductor/vehicles","role":"conductor"}
+[2026-04-04T17:19:00.002Z] UI navigation.menu.click {"from":"/conductor/vehicles","to":"/conductor/documents","role":"conductor"}
+[2026-04-04T17:19:01.761Z] UI navigation.menu.click {"from":"/conductor/documents","to":"/conductor/requests","role":"conductor"}
+[2026-04-04T17:19:03.169Z] UI navigation.menu.click {"from":"/conductor/requests","to":"/conductor/documents","role":"conductor"}
+[2026-04-04T17:19:10.241Z] UI navigation.menu.click {"from":"/conductor/documents","to":"/conductor/requests","role":"conductor"}
+[2026-04-04T17:19:13.132Z] UI navigation.menu.click {"from":"/conductor/requests","to":"/conductor/mileage","role":"conductor"}
+[2026-04-04T17:19:14.890Z] UI navigation.menu.click {"from":"/conductor/mileage","to":"/conductor/messages","role":"conductor"}
+[2026-04-04T17:19:20.212Z] UI navigation.menu.click {"from":"/conductor/messages","to":"/conductor/requests","role":"conductor"}
+[2026-04-04T17:19:20.611Z] UI navigation.menu.click {"from":"/conductor/requests","to":"/conductor/documents","role":"conductor"}

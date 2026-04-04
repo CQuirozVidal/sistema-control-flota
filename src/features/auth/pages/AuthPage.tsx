@@ -8,12 +8,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { logDevInteraction } from "@/shared/monitoring/devLogger";
+import { MOCK_LOCAL_CREDENTIALS } from "@/integrations/supabase/mock";
 import { Truck, Shield } from "lucide-react";
 
 export default function Auth() {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const useMockSupabase = String(import.meta.env.VITE_USE_MOCK_SUPABASE ?? "").toLowerCase() === "true";
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -109,6 +111,15 @@ export default function Auth() {
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Ingresando..." : "Ingresar"}
                   </Button>
+
+                  {useMockSupabase && (
+                    <div className="rounded-lg border bg-muted/30 p-3 text-xs">
+                      <p className="font-medium text-foreground">Modo local activo</p>
+                      <p className="text-muted-foreground mt-1">Contraseña para todos los usuarios: <span className="font-semibold text-foreground">{MOCK_LOCAL_CREDENTIALS.password}</span></p>
+                      <p className="text-muted-foreground mt-1">Admin: <span className="text-foreground">{MOCK_LOCAL_CREDENTIALS.admins[0]}</span></p>
+                      <p className="text-muted-foreground mt-1">Conductores disponibles: {MOCK_LOCAL_CREDENTIALS.conductors.length}</p>
+                    </div>
+                  )}
                 </form>
               </TabsContent>
 
